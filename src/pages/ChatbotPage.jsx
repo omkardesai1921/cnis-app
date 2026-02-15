@@ -113,7 +113,7 @@ function getOfflineResponse(message, lang) {
 // ========== HYBRID RAG: Live Data + Government Baseline + GPS ==========
 
 // GPS-detected location (updated on component mount)
-let detectedLocation = { state: 'Maharashtra', district: 'Nandurbar', detected: false };
+let detectedLocation = { state: '', district: '', detected: false };
 
 async function detectChatbotLocation() {
     return new Promise((resolve) => {
@@ -134,8 +134,22 @@ async function detectChatbotLocation() {
                         const data = await res.json();
                         const addr = data.address || {};
                         // Nominatim returns district in 'county' or 'state_district' field for India
-                        const district = addr.state_district || addr.county || addr.city || addr.town || '';
-                        const state = addr.state || '';
+                        let district = addr.state_district || addr.county || addr.city || addr.town || '';
+                        let state = addr.state || '';
+
+                        // Special handling for Union Territories (Delhi, Chandigarh, etc.)
+                        // Nominatim often returns empty state_district for UTs
+                        const unionTerritories = ['Delhi', 'Chandigarh', 'Puducherry', 'Lakshadweep', 'Andaman and Nicobar Islands'];
+                        if (unionTerritories.some(ut => state.toLowerCase().includes(ut.toLowerCase()))) {
+                            // For Delhi: use suburb/city_district/neighbourhood as district
+                            district = addr.city_district || addr.suburb || addr.city || state;
+                            // Normalize "NCT of Delhi" → "Delhi"
+                            state = state.replace(/^NCT\s+of\s+/i, '').replace(/^National Capital Territory of\s*/i, '').trim();
+                            if (!district || district === state) {
+                                district = addr.suburb || addr.city_district || 'New Delhi';
+                            }
+                        }
+
                         if (district && state) {
                             // Clean up district name (remove "district" suffix if present)
                             const cleanDistrict = district.replace(/\s*(district|जिला|जिल्हा)$/i, '').trim();
@@ -284,9 +298,12 @@ function mapCoordsToLocation(lat, lng) {
         // Assam (3 districts)
         ['Dhubri', 'Assam', 26.02, 89.98], ['Barpeta', 'Assam', 26.32, 91.00],
         ['Guwahati', 'Assam', 26.14, 91.74],
-        // Delhi (3 districts)
+        // Delhi (9 districts - expanded for better coverage)
         ['New Delhi', 'Delhi', 28.61, 77.21], ['South Delhi', 'Delhi', 28.53, 77.22],
-        ['North East Delhi', 'Delhi', 28.70, 77.30],
+        ['North East Delhi', 'Delhi', 28.70, 77.30], ['Central Delhi', 'Delhi', 28.64, 77.23],
+        ['East Delhi', 'Delhi', 28.63, 77.30], ['West Delhi', 'Delhi', 28.65, 77.10],
+        ['North Delhi', 'Delhi', 28.72, 77.20], ['South West Delhi', 'Delhi', 28.53, 77.08],
+        ['North West Delhi', 'Delhi', 28.72, 77.07],
         // Goa (2 districts)
         ['North Goa', 'Goa', 15.53, 73.96], ['South Goa', 'Goa', 15.28, 74.00],
     ].map(([name, state, lat, lng]) => ({ name, state, lat, lng }));

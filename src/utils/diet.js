@@ -20,7 +20,7 @@ export function detectSeason(month = new Date().getMonth()) {
 export async function detectLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-            resolve({ state: 'Maharashtra', city: 'Unknown', detected: false });
+            resolve({ state: '', city: '', detected: false });
             return;
         }
 
@@ -28,26 +28,55 @@ export async function detectLocation() {
             async (position) => {
                 try {
                     const { latitude, longitude } = position.coords;
-                    // Use reverse geocoding (simplified - maps to Indian states)
+
+                    // Try Nominatim API for accurate reverse geocoding
+                    try {
+                        const res = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&zoom=10`,
+                            { headers: { 'Accept-Language': 'en' } }
+                        );
+                        if (res.ok) {
+                            const data = await res.json();
+                            const addr = data.address || {};
+                            let state = addr.state || '';
+                            // Normalize Union Territory names
+                            state = state.replace(/^NCT\s+of\s+/i, '').replace(/^National Capital Territory of\s*/i, '').trim();
+                            if (state) {
+                                resolve({ state, latitude, longitude, detected: true });
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[Location] API fallback, using coordinate mapping:', e.message);
+                    }
+
+                    // Fallback: coordinate-based mapping
                     const state = mapCoordsToState(latitude, longitude);
                     resolve({ state, latitude, longitude, detected: true });
                 } catch (err) {
-                    resolve({ state: 'Maharashtra', city: 'Unknown', detected: false });
+                    resolve({ state: '', city: '', detected: false });
                 }
             },
             () => {
-                resolve({ state: 'Maharashtra', city: 'Unknown', detected: false });
+                resolve({ state: '', city: '', detected: false });
             },
-            { timeout: 5000 }
+            { timeout: 8000 }
         );
     });
 }
 
 /**
  * Approximate state from coordinates (India-focused)
+ * IMPORTANT: More specific regions (Delhi, Goa) must be checked BEFORE larger overlapping states (UP, Maharashtra)
  */
 function mapCoordsToState(lat, lng) {
-    // Simplified state mapping based on coordinate ranges
+    // Delhi (NCT) - MUST be checked before UP since Delhi coords fall within UP's range
+    if (lat >= 28.4 && lat <= 28.9 && lng >= 76.9 && lng <= 77.4) return 'Delhi';
+    // Chandigarh
+    if (lat >= 30.6 && lat <= 30.8 && lng >= 76.7 && lng <= 76.9) return 'Chandigarh';
+    // Goa - check before Karnataka/Maharashtra
+    if (lat >= 15 && lat <= 16 && lng >= 73 && lng <= 75) return 'Goa';
+    // Larger states
     if (lat >= 18 && lat <= 22 && lng >= 72 && lng <= 80) return 'Maharashtra';
     if (lat >= 12 && lat <= 18 && lng >= 74 && lng <= 78) return 'Karnataka';
     if (lat >= 8 && lat <= 13 && lng >= 76 && lng <= 80) return 'Tamil Nadu';
@@ -61,11 +90,10 @@ function mapCoordsToState(lat, lng) {
     if (lat >= 25 && lat <= 27 && lng >= 85 && lng <= 88) return 'Bihar';
     if (lat >= 21 && lat <= 26 && lng >= 83 && lng <= 87) return 'Jharkhand';
     if (lat >= 13 && lat <= 19 && lng >= 76 && lng <= 81) return 'Andhra Pradesh';
-    if (lat >= 15 && lat <= 18 && lng >= 73 && lng <= 76) return 'Goa';
     if (lat >= 28 && lat <= 33 && lng >= 74 && lng <= 77) return 'Punjab';
     if (lat >= 28 && lat <= 33 && lng >= 76 && lng <= 78) return 'Haryana';
     if (lat >= 26 && lat <= 31 && lng >= 69 && lng <= 76) return 'Rajasthan';
-    return 'Maharashtra'; // Default
+    return ''; // No match - leave empty for user to select
 }
 
 /**

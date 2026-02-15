@@ -39,7 +39,7 @@ export default function ScreeningPage() {
     const [result, setResult] = useState(null);
     const [dietInfo, setDietInfo] = useState(null);
     const [dangerSigns, setDangerSigns] = useState([]);
-    const [locationInfo, setLocationInfo] = useState({ state: 'Maharashtra', detected: false });
+    const [locationInfo, setLocationInfo] = useState({ state: '', detected: false });
     const [season, setSeason] = useState(detectSeason());
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoValidation, setPhotoValidation] = useState(null);
@@ -435,8 +435,8 @@ export default function ScreeningPage() {
                 type="button"
                 onClick={() => startVoiceForField(field)}
                 className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive
-                        ? 'bg-red-500 text-white shadow-md scale-110 voice-active'
-                        : 'bg-gray-100 text-gray-400 hover:bg-primary-100 hover:text-clinical-blue'
+                    ? 'bg-red-500 text-white shadow-md scale-110 voice-active'
+                    : 'bg-gray-100 text-gray-400 hover:bg-primary-100 hover:text-clinical-blue'
                     }`}
                 title={isActive ? 'Stop listening' : getVoicePrompt(field, i18n.language)}
             >
@@ -481,8 +481,8 @@ export default function ScreeningPage() {
             {/* Voice Status Bar */}
             {(voiceStatus || isListening || interimTranscript) && (
                 <div className={`rounded-xl px-4 py-2.5 text-sm flex items-center gap-2 transition-all ${voiceStatus.startsWith('❌') ? 'bg-red-50 text-red-600 border border-red-200' :
-                        voiceStatus.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' :
-                            'bg-primary-50 text-clinical-blue border border-primary-200'
+                    voiceStatus.startsWith('✅') ? 'bg-green-50 text-green-700 border border-green-200' :
+                        'bg-primary-50 text-clinical-blue border border-primary-200'
                     }`}>
                     {isListening && (
                         <div className="flex gap-1 items-center">

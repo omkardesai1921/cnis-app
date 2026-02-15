@@ -232,10 +232,16 @@ export const nfhsData = {
     "Barpeta": d("Assam", 40, 16, 35, "High", "Flood-prone Brahmaputra."),
     "Guwahati": d("Assam", 28, 12, 24, "Medium", "State capital."),
 
-    // DELHI
-    "New Delhi": d("Delhi", 26, 12, 22, "Medium", "National capital, slum pockets."),
-    "South Delhi": d("Delhi", 22, 10, 18, "Low", "Affluent area."),
-    "North East Delhi": d("Delhi", 30, 14, 27, "Medium", "Dense, low-income."),
+    // DELHI (NCT - 9 districts)
+    "New Delhi": d("Delhi", 24, 11, 20, "Medium", "National capital, urban pocket malnutrition in slums."),
+    "South Delhi": d("Delhi", 22, 10, 19, "Medium", "Better performing, affluent areas."),
+    "North East Delhi": d("Delhi", 31, 15, 28, "High", "Dense population, migrant concentration."),
+    "Central Delhi": d("Delhi", 25, 12, 21, "Medium", "Old Delhi areas, mixed nutrition profile."),
+    "East Delhi": d("Delhi", 28, 13, 25, "Medium", "Trans-Yamuna, resettlement colonies."),
+    "West Delhi": d("Delhi", 26, 11, 22, "Medium", "Mixed residential and industrial areas."),
+    "North Delhi": d("Delhi", 27, 12, 24, "Medium", "Civil Lines and surrounding areas."),
+    "South West Delhi": d("Delhi", 25, 11, 21, "Medium", "Dwarka and Najafgarh areas."),
+    "North West Delhi": d("Delhi", 29, 14, 26, "Medium", "Rural pockets, Narela area."),
 
     // GOA
     "North Goa": d("Goa", 20, 12, 17, "Low", "Tourism, better nutrition."),
