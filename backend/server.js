@@ -23,8 +23,18 @@ app.use(helmet({
 }));
 
 // CORS - Allow frontend to make requests
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map(url => url.trim());
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(null, true); // Allow all in production for now
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200
 };
