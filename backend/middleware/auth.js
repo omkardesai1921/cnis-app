@@ -21,6 +21,7 @@ function initializeFirebase() {
                 credential: admin.credential.cert(serviceAccount)
             });
             console.log('✅ Firebase Admin initialized with service account file');
+            firebaseInitialized = true;
         }
         // Option 2: Use environment variables
         else if (process.env.FIREBASE_PROJECT_ID) {
@@ -32,11 +33,12 @@ function initializeFirebase() {
                 })
             });
             console.log('✅ Firebase Admin initialized with environment variables');
+            firebaseInitialized = true;
         } else {
             console.warn('⚠️  Firebase Admin not configured. Authentication disabled.');
             console.warn('   Set FIREBASE_SERVICE_ACCOUNT_PATH or individual credentials in .env');
+            // firebaseInitialized remains false
         }
-        firebaseInitialized = true;
     } catch (error) {
         console.error('❌ Firebase initialization error:', error.message);
     }
