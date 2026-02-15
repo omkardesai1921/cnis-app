@@ -410,13 +410,7 @@ function getLocationLabel() {
 }
 
 async function getAIResponse(message, lang) {
-    const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-    const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-    if (!openaiKey && !geminiKey) {
-        return getOfflineResponse(message, lang);
-    }
-
+    // === USE SECURE BACKEND PROXY ===
     try {
         // Get RAG Context (same for both providers)
         const ragContext = getRegionalHealthContext(message);
@@ -433,78 +427,14 @@ async function getAIResponse(message, lang) {
             systemText = `You are CNIS Medibot, a district-level health AI. ${ragContext}\nMANDATORY RULES:\n1. ALWAYS mention the user's location "${loc}" by name\n2. ALWAYS cite specific NFHS-5 stats (stunting %, wasting %, underweight %)\n3. If any ALERT exists, highlight it prominently with ⚠️\n4. Use bullets/emojis. No dosages. End with 📌 Recommended Questions. 250 words max.`;
         }
 
-        const userText = lang === 'hi' ? `सवाल: ${message}`
-            : lang === 'mr' ? `प्रश्न: ${message}`
-                : `Q: ${message}`;
+        // Call backend (which has the API keys)
+        const { callSecureChat } = await import('../utils/backendApi');
+        const response = await callSecureChat(message, lang, systemText);
+        return response;
 
-        // === TRY OPENAI FIRST ===
-        if (openaiKey) {
-            try {
-                console.log('[Medibot] Trying OpenAI...');
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${openaiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: 'gpt-4o',
-                        messages: [
-                            { role: 'system', content: systemText },
-                            { role: 'user', content: userText }
-                        ],
-                        max_tokens: 400,
-                        temperature: 0.7
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const answer = data.choices?.[0]?.message?.content;
-                    if (answer) {
-                        console.log('[Medibot] ✅ OpenAI RAG response');
-                        return answer;
-                    }
-                } else {
-                    console.warn('[Medibot] OpenAI failed:', response.status, '- trying Gemini fallback');
-                }
-            } catch (e) {
-                console.warn('[Medibot] OpenAI error:', e.message, '- trying Gemini fallback');
-            }
-        }
-
-        // === FALLBACK: GEMINI (FREE) ===
-        if (geminiKey) {
-            console.log('[Medibot] Using Gemini fallback with RAG...');
-            const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-            for (const model of models) {
-                try {
-                    const response = await fetch(
-                        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
-                        {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                contents: [{ role: 'user', parts: [{ text: systemText + '\n\n' + userText }] }],
-                                generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
-                            })
-                        }
-                    );
-                    if (response.status === 429) { await new Promise(r => setTimeout(r, 2000)); continue; }
-                    if (!response.ok) continue;
-                    const data = await response.json();
-                    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (answer) {
-                        console.log(`[Medibot] ✅ Gemini (${model}) RAG response`);
-                        return answer;
-                    }
-                } catch (e) { console.warn(`[Medibot] Gemini ${model} error:`, e.message); }
-            }
-        }
-
-        return getOfflineResponse(message, lang);
     } catch (err) {
-        console.error('[Medibot] Error:', err);
+        console.error('[Medibot] Backend error:', err);
+        // Fallback to offline if backend fails
         return getOfflineResponse(message, lang);
     }
 }
