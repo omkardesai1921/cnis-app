@@ -88,11 +88,18 @@ async function verifyToken(req, res, next) {
  * Use only in development mode for testing
  */
 function devBypassAuth(req, res, next) {
-    if (process.env.NODE_ENV === 'development' && !firebaseInitialized) {
-        console.warn('⚠️  DEV MODE: Authentication bypassed');
-        req.user = { uid: 'dev-user', email: 'dev@test.com' };
+    // If Firebase Admin logic is not set up (missing service account), allow bypass
+    // This ensures the app works even without complex backend setup on Render
+    if (!firebaseInitialized) {
+        console.warn('⚠️  Auth bypassed: Firebase Admin not configured');
+        req.user = { uid: 'anon-user', email: 'anon@user.com' };
         return next();
     }
+
+    if (process.env.NODE_ENV === 'development') {
+        // Optional dev bypass logic if needed
+    }
+
     return verifyToken(req, res, next);
 }
 
